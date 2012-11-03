@@ -182,10 +182,10 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
     
     /**
      * Given a cop's name, return how many incorrectly-performed seizures they have performed.
-     * This function could be used to inflict punishments other than the vanilla jailing.
+     * This function could be used to inflict other punishments that are more than the vanilla jailing.
      * 
      * @param co The cop's name (as a String, not a Player)
-     * @return
+     * @return the times they have incorrectly caught people
      */
     public Integer getCopIncorrectSeizure(String co) {
         if(copInfo.containsKey(co)) {

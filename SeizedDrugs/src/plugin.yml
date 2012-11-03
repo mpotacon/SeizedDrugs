@@ -1,6 +1,6 @@
 name: SeizedDrugs
 main: net.dragon_weed.plugins.seizeddrugs.SeizedDrugs
-version: 0.3
+version: 0.4
 author: tuxed
 permissions:
     seizeddrugs.*:
