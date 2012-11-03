@@ -1,7 +1,31 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (c) 2012, tuxed
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 	* Redistributions of source code must retain the above copyright
+ * 	notice, this list of conditions and the following disclaimer.
+ * 	* Redistributions in binary form must reproduce the above copyright
+ * 	notice, this list of conditions and the following disclaimer in the
+ * 	documentation and/or other materials provided with the distribution.
+ * 	* Neither the name of tuxed nor the
+ *	names of its contributors may be used to endorse or promote products
+ * 	derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL TUXED BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package net.dragon_weed.plugins.seizeddrugs;
 
 import java.io.FileInputStream;
@@ -48,11 +72,12 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
     private String filePath = this.getDataFolder().getAbsolutePath() + "/badCops.dat";
     
     /**
-     * Beatdown function.
+     * Given a player name, return the current health value of the player in beatdown mode.
      * 
-     * @returns 0 == hit/1 == miss/2 == beat
+     * @param player A player (as a string, not a Player)
+     * @return health value as a Integer
      */
-    
+
     public Integer getBeatdownHealth(String player) {
         if(beatdownInfo.containsKey(player)) {
             return beatdownInfo.get(player);
@@ -60,7 +85,14 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
             return getConfig().getInt("beatdown-health", 20);
         }
     }
-    
+   
+    /**
+     * Set a player's beatdown health. This function can be used to give bluffs, for example.
+     * This is not affected by the max beatdown health value.
+     * 
+     * @param player (as a String, not a Player)
+     * @param health an Integer
+     */
     public void setBeatdownHealth(String player, Integer health) {
         if(beatdownInfo.containsKey(player)) {
             beatdownInfo.remove(player);
@@ -147,6 +179,14 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
         }
         return didSeize;
     }
+    
+    /**
+     * Given a cop's name, return how many incorrectly-performed seizures they have performed.
+     * This function could be used to inflict punishments other than the vanilla jailing.
+     * 
+     * @param co The cop's name (as a String, not a Player)
+     * @return
+     */
     public Integer getCopIncorrectSeizure(String co) {
         if(copInfo.containsKey(co)) {
             return copInfo.get(co);
