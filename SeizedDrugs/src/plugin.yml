@@ -1,0 +1,22 @@
+name: SeizedDrugs
+main: net.dragon_weed.plugins.seizeddrugs.SeizedDrugs
+version: 0.3
+author: tuxed
+permissions:
+    seizeddrugs.*:
+        description: Gives access to all SeizedDrugs features.
+        children:
+            seizeddrugs.use: true
+            seizeddrugs.exempt: true
+            seizeddrugs.admin: true
+    seizeddrugs.use:
+        description: Allows users to catch crooks.
+        default: op
+    seizeddrugs.exempt:
+        description: Makes you exempt from being caught by a cop.
+    seizeddrugs.admin:
+        description: Get the status of a cop, reload the plugin or reset cop data via /police.
+        default: op
+commands:
+    police:
+        description: SeizedDrugs administration
