@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
+
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -45,6 +47,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -64,12 +67,18 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
 		BEAT
 	}
 	
+	private enum Mode {
+		DRUG_SEIZE,
+		BEATDOWN
+	}
+	
     private Map<String, Integer> copInfo = new HashMap<String, Integer>();
     private Map<String, Integer> beatdownInfo = new HashMap<String, Integer>();
+    private Map<String, Mode> copModes = new HashMap<String, Mode>();
     private Random rnd = new Random();
     private WorldGuardPlugin wgplugin = null;
     private Logger log = Logger.getLogger("Minecraft");
-    private String filePath = this.getDataFolder().getAbsolutePath() + "/badCops.dat";
+    private String filePath;
     
     /**
      * Given a player name, return the current health value of the player in beatdown mode.
@@ -136,6 +145,25 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
         }
     }
     
+    private boolean badCopHandler(Player policeman, boolean good) {
+    	// Bad donut eater, bad!
+        if(!good) {
+            if(!copInfo.containsKey(policeman.getName())) {
+                copInfo.put(policeman.getName(), 1);
+            } else {
+                Integer k = copInfo.get(policeman.getName()) + 1;
+                copInfo.remove(policeman.getName());
+                copInfo.put(policeman.getName(), k);
+            }
+            return false;
+        } else {
+            if(copInfo.containsKey(policeman.getName())) {
+                copInfo.remove(policeman.getName());
+            }
+        }
+        return true;
+    }
+    
     /**
      * Seize a player's drugs.
      * 
@@ -144,40 +172,40 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
     @SuppressWarnings("deprecation")
     private boolean seize(Player policeman, Player p) {
         ItemStack[] i = p.getInventory().getContents();
-        boolean didSeize = false;
+        // Do a simple scan first to count item stacks.
+        // We'll cache the results to speed up removal as well:
+        ItemStack[] drugs = new ItemStack[]{};
         for (ItemStack item : i) {
             if (item != null) {
                 if(isDrug(item.getTypeId(), item.getDurability())) {
-                    p.getInventory().remove(item);
-                    if(!getConfig().getBoolean("destroy-items")) {
-                        if(policeman.getInventory().firstEmpty() == -1) {
-                            if(!getConfig().getBoolean("destroy-items-if-inv-full")) {
-                                p.getWorld().dropItemNaturally(policeman.getLocation(), item);
-                            }
-                        } else {
-                            policeman.getInventory().addItem(item);
-                        }
-                        didSeize = true;
+                	drugs[drugs.length] = item;
+                }
+            }
+        }
+        
+        // Check if we seized drugs
+        if(drugs.length < getConfig().getInt("num-stacks-required-to-arrest", 1)) {
+        	return badCopHandler(policeman, false);
+        }
+        
+        // Now do the actual removal.
+        // We filtered the list earlier
+        for (ItemStack item : drugs) {
+            p.getInventory().remove(item);
+            if(!getConfig().getBoolean("destroy-items")) {
+                if(policeman.getInventory().firstEmpty() == -1) {
+                    if(!getConfig().getBoolean("destroy-items-if-inv-full")) {
+                        p.getWorld().dropItemNaturally(policeman.getLocation(), item);
                     }
+                } else {
+                    policeman.getInventory().addItem(item);
                 }
             }
         }
         p.updateInventory();
         policeman.updateInventory();
-        if(!didSeize) {
-            if(!copInfo.containsKey(policeman.getName())) {
-                copInfo.put(policeman.getName(), 1);
-            } else {
-                Integer k = copInfo.get(policeman.getName()) + 1;
-                copInfo.remove(policeman.getName());
-                copInfo.put(policeman.getName(), k);
-            }
-        } else {
-            if(copInfo.containsKey(policeman.getName())) {
-                copInfo.remove(policeman.getName());
-            }
-        }
-        return didSeize;
+
+        return badCopHandler(policeman, true);
     }
     
     /**
@@ -198,8 +226,22 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
     @SuppressWarnings("unchecked")
 	@Override
     public void onEnable() {
+    	filePath = this.getDataFolder().getAbsolutePath() + "/badCops.dat";
         this.getDataFolder().mkdirs();
         getConfig().options().copyDefaults(true);
+        if(!getConfig().contains("drugs")) {
+        	log.info("Adding default drug configuration.");
+        	getConfig().set("drugs.353", true);
+        	getConfig().set("drugs.339", true);
+        	getConfig().set("drugs.372", true);
+        	getConfig().set("drugs.296", true);
+        	getConfig().set("drugs.351:2", true);
+        	getConfig().set("drugs.351:1", true);
+        	getConfig().set("drugs.40", true);
+        	getConfig().set("drugs.39", true);
+        	getConfig().set("drugs.351:15", true);
+        	getConfig().set("drugs.351:3", true);
+        }
         this.saveConfig();
         getServer().getPluginManager().registerEvents(this, this);
         try {
@@ -234,32 +276,97 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
             log.info("More info: "+ex.getMessage());
         }
         this.saveConfig();
+        wgplugin = null;
+        copInfo = null;
+        copModes = null;
+        beatdownInfo = null;
+        rnd = null;
+        log = null;
     }
     
     private boolean isDrug(int it, int id) {
         String b = "";
         if(id==0) {
-            b = "drugs."+it;
+            b = b + it;
         } else {
-            b = "drugs."+it+":"+id;
+            b = b + it+":"+id;
         }
-
-        return getConfig().getBoolean(b, false);
+        
+        if(getConfig().getBoolean("drugs."+b, false)) {
+        	return true;
+        } else {
+        	return getConfig().getBoolean("drugs."+it+":*", false);
+        }
+    }
+    
+    private boolean canUseMode(String user, Mode m) {
+    	// Configuration
+    	if(getConfig().getBoolean("beatdown-only", false) && m == Mode.DRUG_SEIZE) {
+    		return false;
+    	}
+    	if(getConfig().getBoolean("seize-only", false) && m == Mode.BEATDOWN) {
+    		return false;
+    	}
+    	// Permissions
+    	if(m == Mode.DRUG_SEIZE && !getServer().getPlayerExact(user).hasPermission("seizeddrugs.use.seize")) {
+    		return false;
+    	}
+    	if(m == Mode.BEATDOWN && !getServer().getPlayerExact(user).hasPermission("seizeddrugs.use.beatdown")) {
+    		return false;
+    	}
+    	return true;
     }
     
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
-    	if(!sender.hasPermission("seizeddrugs.admin")) {
-            sender.sendMessage("You don't have permission to use this command.");
+    	// Case 1: Police and rogue admins
+    	if(!sender.hasPermission("seizeddrugs.use")) {
+            sender.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
             return true;
         }
         if (args.length < 1) {
            sender.sendMessage("No arguments provided!");
-           sender.sendMessage("/police check <name>: Check player status");
-           sender.sendMessage("/police reload: Reload plugin");
-           sender.sendMessage("/police reset: Reset cop data");
-           sender.sendMessage("/police beatreset: Reset beatdown health");
+           if(sender.hasPermission("seizeddrugs.admin")) {
+	           sender.sendMessage("/police check <name>: Check player status");
+	           sender.sendMessage("/police reload: Reload plugin");
+	           sender.sendMessage("/police reset: Reset cop data");
+	           sender.sendMessage("/police beatreset: Reset beatdown health for all players");
+           }
+           if(sender instanceof Player) {
+        	   sender.sendMessage("/police mode: Switch from beatdown mode to drug seize mode and vice versa");
+           }
            return true;
+        }
+        
+        if("mode".equals(args[0]) && sender instanceof Player) {
+        	Mode s = copModes.get(sender.getName());
+        	switch(s) {
+			case BEATDOWN:
+				if(canUseMode(sender.getName(), Mode.DRUG_SEIZE)) {
+					copModes.remove(sender.getName());
+					copModes.put(sender.getName(), Mode.DRUG_SEIZE);
+					sender.sendMessage(ChatColor.GOLD + "Changed to drug seizing mode.");
+				} else {
+					sender.sendMessage(ChatColor.RED + "You are restricted from changing to another mode.");
+				}
+				break;
+			case DRUG_SEIZE:
+				if(canUseMode(sender.getName(), Mode.BEATDOWN)) {
+					copModes.remove(sender.getName());
+					copModes.put(sender.getName(), Mode.BEATDOWN);
+					sender.sendMessage(ChatColor.GOLD + "Changed to beatdown mode.");
+				} else {
+					sender.sendMessage(ChatColor.RED + "You are restricted from changing to another mode.");
+				}
+				break;
+			default:
+				break;
+        	}
+        }
+        // Case 2: Admin
+    	if(!sender.hasPermission("seizeddrugs.admin")) {
+            sender.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+            return true;
         }
         if("reload".equals(args[0])) {
             this.reloadConfig();
@@ -284,6 +391,19 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
     }
     
     @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent evt) {
+    	if(evt.getPlayer().hasPermission("seizeddrugs.use")) {
+    		if(!copModes.containsKey(evt.getPlayer().getName())) {
+    			if(getConfig().getBoolean("beatdown-only", false)) {
+    				copModes.put(evt.getPlayer().getName(), Mode.BEATDOWN);
+    			} else {
+    				copModes.put(evt.getPlayer().getName(), Mode.DRUG_SEIZE);
+    			}
+    		}
+    	}
+    }
+    
+    @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent evt) {
         if(evt.isCancelled() && !getConfig().getBoolean("ignore-pvp-restrictions")) {
             return;
@@ -292,10 +412,16 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
             Player cop = (Player)evt.getDamager();
             Player caught = (Player)evt.getEntity();
             if(cop.getItemInHand().getTypeId() == getConfig().getInt("police-item-id") && cop.hasPermission("seizeddrugs.use") && !caught.hasPermission("seizeddrugs.exempt") && canBeatHere(caught)) {
-                if(getConfig().getBoolean("beatdown")) {
+            	// We are going to be mode-dependent here.
+                switch(copModes.get(cop.getName())) {
+                case BEATDOWN:
                 	performBeatdown(cop, caught);
-                } else {
+                	break;
+                case DRUG_SEIZE:
                     performSeize(cop, caught);
+                    break;
+                default:
+                	log.severe("Improper copMode! This is a bug, please report.");
                 }
                 evt.setCancelled(true);
             }
@@ -360,6 +486,6 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
         m = m.replace("%player%", player.getName());
         m = m.replace("%cop%", cop.getName());
         m = m.replace("%times%", getCopIncorrectSeizure(cop.getName()).toString());
-        return m;
+        return ChatColor.translateAlternateColorCodes('&', m);
     }
 }

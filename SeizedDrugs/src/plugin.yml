@@ -1,16 +1,26 @@
 name: SeizedDrugs
 main: net.dragon_weed.plugins.seizeddrugs.SeizedDrugs
-version: 0.4
+version: 0.5
 author: tuxed
 permissions:
     seizeddrugs.*:
         description: Gives access to all SeizedDrugs features.
         children:
             seizeddrugs.use: true
+            seizeddrugs.use.*: true
             seizeddrugs.exempt: true
             seizeddrugs.admin: true
     seizeddrugs.use:
-        description: Allows users to catch crooks.
+        description: Allows users to catch crooks in all modes, by default. Use the seizeddrugs.use.* nodes/config.yml to control this behavior.
+        default: op
+    seizeddrugs.use.*:
+        description: Allows users to catch crooks in all modes. You shouldn't need to grant this as seizeddrugs.use already does that.
+        default: op
+    seizeddrugs.use.seize:
+        description: Allows users to catch crooks in seize mode.
+        default: op
+    seizeddrugs.use.beatdown:
+        description: Allows users to catch crooks in beatdown mode.
         default: op
     seizeddrugs.exempt:
         description: Makes you exempt from being caught by a cop.

@@ -2,19 +2,6 @@
 # GENERAL CONFIGURATION
 # ---------------------
 
-# Add your item IDs under "drugs"
-drugs:
-  '353': true
-  '339': true
-  '372': true
-  '296': true
-  '351:2': true
-  '351:1': true
-  '40': true
-  '39': true
-  '351:15': true
-  '351:3': true
-
 # Command for jailing. This is used for jailing cops AND caught people.
 # %username% and %duration% will be filled in automatically. You can customize %duration% below.
 jail-command: "jail %username% 1 %duration%"
@@ -27,6 +14,21 @@ cop-threshold: 2
 ignore-pvp-restrictions: false
 # Should we run the jail command as the console or the cop?
 run-command-as-cop: false
+# Item stacks required to jail users.
+# DO NOT SET TO ANY VALUE LESS THAN 1
+num-stacks-required-to-arrest: 1
+
+# ------------------
+# MODE CONFIGURATION
+# ------------------
+
+# Since 0.5 you can mix and match modes with /police mode.
+# Here you can disable a mode.
+
+# Enable beatdown mode *only*?
+beatdown-only: false
+# Enable drug seize mode *only*?
+seize-only: false
 
 # ----------------
 # SEIZING SETTINGS
@@ -46,8 +48,6 @@ ban-arrest-regions: ["region1"]
 # BEATDOWN MODE
 # -------------
 
-# Enable beatdown mode? Note that you will not be able to arrest like normal.
-beatdown: false
 # What will be the maximum health of a player?
 beatdown-health: 20
 # How much health is taken from a player per beat?
