@@ -33,6 +33,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -171,26 +172,26 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
      */
     @SuppressWarnings("deprecation")
     private boolean seize(Player policeman, Player p) {
+    	ArrayList<ItemStack> drugs = new ArrayList<ItemStack>();
         ItemStack[] i = p.getInventory().getContents();
         // Do a simple scan first to count item stacks.
         // We'll cache the results to speed up removal as well:
-        ItemStack[] drugs = new ItemStack[]{};
         for (ItemStack item : i) {
             if (item != null) {
                 if(isDrug(item.getTypeId(), item.getDurability())) {
-                	drugs[drugs.length] = item;
+                	drugs.add(item);
                 }
             }
         }
         
         // Check if we seized drugs
-        if(drugs.length < getConfig().getInt("num-stacks-required-to-arrest", 1)) {
+        if(drugs.size() < getConfig().getInt("num-stacks-required-to-arrest", 1)) {
         	return badCopHandler(policeman, false);
         }
         
         // Now do the actual removal.
         // We filtered the list earlier
-        for (ItemStack item : drugs) {
+        for (ItemStack item : drugs.toArray(i)) {
             p.getInventory().remove(item);
             if(!getConfig().getBoolean("destroy-items")) {
                 if(policeman.getInventory().firstEmpty() == -1) {
