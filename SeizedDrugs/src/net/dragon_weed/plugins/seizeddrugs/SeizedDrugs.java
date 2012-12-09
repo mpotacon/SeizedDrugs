@@ -33,7 +33,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -172,37 +171,37 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
      */
     @SuppressWarnings("deprecation")
     private boolean seize(Player policeman, Player p) {
-    	ArrayList<ItemStack> drugs = new ArrayList<ItemStack>();
         ItemStack[] i = p.getInventory().getContents();
-        // Do a simple scan first to count item stacks.
-        // We'll cache the results to speed up removal as well:
-        for (ItemStack item : i) {
-            if (item != null) {
-                if(isDrug(item.getTypeId(), item.getDurability())) {
-                	drugs.add(item);
-                }
-            }
-        }
+        int seized = 0;
         
-        // Check if we seized drugs
-        if(drugs.size() < getConfig().getInt("num-stacks-required-to-arrest", 1)) {
+        if(i.length < 1) {
         	return badCopHandler(policeman, false);
         }
         
-        // Now do the actual removal.
-        // We filtered the list earlier
-        for (ItemStack item : drugs.toArray(i)) {
-            p.getInventory().remove(item);
-            if(!getConfig().getBoolean("destroy-items")) {
-                if(policeman.getInventory().firstEmpty() == -1) {
-                    if(!getConfig().getBoolean("destroy-items-if-inv-full")) {
-                        p.getWorld().dropItemNaturally(policeman.getLocation(), item);
-                    }
-                } else {
-                    policeman.getInventory().addItem(item);
-                }
-            }
+        // Check if we seized drugs
+        
+        for (ItemStack item : i) {
+        	if(item != null) {
+	            if(isDrug(item.getTypeId(), item.getDurability())) {
+	            	seized++;
+	            	p.getInventory().remove(item);
+	            	if(!getConfig().getBoolean("destroy-items")) {
+	                	if(policeman.getInventory().firstEmpty() == -1) {
+	                    	if(!getConfig().getBoolean("destroy-items-if-inv-full")) {
+	                    		p.getWorld().dropItemNaturally(policeman.getLocation(), item);
+	                    	}
+	                	} else {
+	                		policeman.getInventory().addItem(item);
+	                	}
+	            	}
+	            }
+        	}
         }
+        
+        if(seized < getConfig().getInt("num-stacks-required-to-arrest", 1)) {
+        	return badCopHandler(policeman, false);
+        }
+        
         p.updateInventory();
         policeman.updateInventory();
 
@@ -414,6 +413,13 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
             Player caught = (Player)evt.getEntity();
             if(cop.getItemInHand().getTypeId() == getConfig().getInt("police-item-id") && cop.hasPermission("seizeddrugs.use") && !caught.hasPermission("seizeddrugs.exempt") && canBeatHere(caught)) {
             	// We are going to be mode-dependent here.
+            	if(!copModes.containsKey(cop.getName())) {
+        			if(getConfig().getBoolean("beatdown-only", false)) {
+        				copModes.put(cop.getName(), Mode.BEATDOWN);
+        			} else {
+        				copModes.put(cop.getName(), Mode.DRUG_SEIZE);
+        			}
+            	}
                 switch(copModes.get(cop.getName())) {
                 case BEATDOWN:
                 	performBeatdown(cop, caught);
