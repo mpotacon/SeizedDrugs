@@ -1,6 +1,6 @@
 name: SeizedDrugs
 main: com.imaginarycode.plugins.seizeddrugs.SeizedDrugs
-version: 0.5
+version: 0.5.1
 author: tuxed
 permissions:
     seizeddrugs.*:
