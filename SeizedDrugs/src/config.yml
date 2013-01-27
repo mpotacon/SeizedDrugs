@@ -4,10 +4,11 @@
 
 # Command for jailing. This is used for jailing cops AND caught people.
 # %username% and %duration% will be filled in automatically. You can customize %duration% below.
-jail-command: "jail %username% 1 %duration%"
-# Jail durations for players and cops.
-jail-duration-for-player: 5m
-jail-duration-for-cop: 30m
+# If you are using sdjail (the default built-in jail system), the variables are automatically filled in.
+jail-command: sdjail
+# Jail durations for players and cops, in minutes or other time format (for other jail plugins)
+jail-duration-for-player: 5
+jail-duration-for-cop: 30
 # Cop jail threshold. Set to 0 to disable.
 cop-threshold: 2
 # Ignore PvP restrictions from plugins like WorldGuard?
@@ -15,7 +16,7 @@ ignore-pvp-restrictions: false
 # Should we run the jail command as the console or the cop?
 run-command-as-cop: false
 # Item stacks required to jail users.
-# DO NOT SET TO ANY VALUE LESS THAN 1
+# DO NOT SET TO ANY VALUE LESS THAN 1.
 num-stacks-required-to-arrest: 1
 
 # ------------------
