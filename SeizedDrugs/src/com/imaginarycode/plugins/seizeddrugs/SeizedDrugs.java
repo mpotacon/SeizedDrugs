@@ -26,7 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package net.dragon_weed.plugins.seizeddrugs;
+package com.imaginarycode.plugins.seizeddrugs;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -51,6 +51,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.mcstats.Metrics;
 
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
@@ -232,6 +233,13 @@ public class SeizedDrugs extends JavaPlugin implements Listener {
         getDataFolder().mkdirs();
         getServer().getScheduler().scheduleSyncRepeatingTask(this, new BeatdownHealRunnable(), 1200L, 1200L);
         getConfig().options().copyDefaults(true);
+        try {
+        	log.info("Starting Metrics...");
+			new Metrics(this).start();
+			log.info("Metrics successfully enabled!");
+		} catch (IOException e) {
+			log.info("Could not enable Metrics :(");
+		}
         if(!getConfig().contains("drugs")) {
         	log.info("Adding default drug configuration.");
         	getConfig().set("drugs.353", true);

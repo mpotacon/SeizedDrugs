@@ -1,4 +1,4 @@
-package net.dragon_weed.plugins.seizeddrugs;
+package com.imaginarycode.plugins.seizeddrugs;
 
 public class SeizedDrugsAPI {
 	private static SeizedDrugs plugin;
