@@ -5,7 +5,7 @@
 # Command for jailing. This is used for jailing cops AND caught people.
 # %username% and %duration% will be filled in automatically. You can customize %duration% below.
 # If you are using sdjail (the default built-in jail system), the variables are automatically filled in.
-jail-command: sdjail
+jail-command: jail %username% 1 %duration%
 # Jail durations for players and cops, in minutes or other time format (for other jail plugins)
 jail-duration-for-player: 5
 jail-duration-for-cop: 30
